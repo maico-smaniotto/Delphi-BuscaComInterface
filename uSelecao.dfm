@@ -21,94 +21,72 @@ object FormSelecao: TFormSelecao
     487)
   TextHeight = 15
   object lblRegistros: TLabel
-    Left = 721
-    Top = 437
+    Left = 717
+    Top = 459
     Width = 60
     Height = 15
     Anchors = [akTop, akRight]
     Caption = 'Registros: 0'
-    ExplicitLeft = 552
   end
   object btnPrimPag: TSpeedButton
-    Left = 33
+    Left = 190
     Top = 455
-    Width = 31
+    Width = 93
     Height = 24
-    Caption = '|<<'
+    Caption = '[Ctrl+PgUp]   |<<'
     OnClick = btnPrimPagClick
   end
   object btnPagAnt: TSpeedButton
-    Left = 99
+    Left = 299
     Top = 455
-    Width = 31
+    Width = 68
     Height = 24
-    Caption = '<'
+    Caption = '[PgUp]   <'
     OnClick = btnPagAntClick
   end
   object btnProxPag: TSpeedButton
-    Left = 251
+    Left = 531
     Top = 455
-    Width = 31
+    Width = 58
     Height = 24
-    Caption = '>'
+    Caption = '[PgDn]   >'
     OnClick = btnProxPagClick
   end
   object btnUltPag: TSpeedButton
-    Left = 315
+    Left = 595
     Top = 455
-    Width = 31
+    Width = 102
     Height = 24
-    Caption = '>>|'
+    Caption = '[Ctrl+PgDn]   >>|'
     OnClick = btnUltPagClick
   end
   object Label1: TLabel
-    Left = 147
-    Top = 437
+    Left = 373
+    Top = 459
     Width = 23
     Height = 15
     Caption = 'P'#225'g.'
   end
   object Label2: TLabel
-    Left = 194
-    Top = 437
+    Left = 455
+    Top = 459
     Width = 13
     Height = 15
     Caption = 'de'
   end
   object Label3: TLabel
     Left = 8
-    Top = 11
+    Top = 12
     Width = 237
     Height = 15
-    Caption = 'Pr'#243'x. Campo [F3]   |   Campo Anter. [Ctrl+F3]'
+    Caption = '[F3] Pr'#243'x. Campo   |   [Ctrl+F3] Campo Anter.'
   end
-  object Label4: TLabel
-    Left = 8
-    Top = 437
-    Width = 56
+  object Label8: TLabel
+    Left = 4
+    Top = 459
+    Width = 155
     Height = 15
-    Caption = 'Ctrl+PgUp'
-  end
-  object Label5: TLabel
-    Left = 96
-    Top = 437
-    Width = 29
-    Height = 15
-    Caption = 'PgUp'
-  end
-  object Label6: TLabel
-    Left = 251
-    Top = 437
-    Width = 29
-    Height = 15
-    Caption = 'PgDn'
-  end
-  object Label7: TLabel
-    Left = 315
-    Top = 437
-    Width = 56
-    Height = 15
-    Caption = 'Ctrl+PgDn'
+    Caption = '[ENTER] Escolher selecionado'
   end
   object btnVoltar: TButton
     Left = 702
@@ -124,7 +102,7 @@ object FormSelecao: TFormSelecao
     Left = 4
     Top = 66
     Width = 789
-    Height = 365
+    Height = 384
     DataSource = dsGrid
     Options = [dgTitles, dgIndicator, dgColumnResize, dgColLines, dgRowLines, dgTabs, dgRowSelect, dgConfirmDelete, dgCancelOnExit, dgTitleClick, dgTitleHotTrack]
     TabOrder = 1
@@ -148,7 +126,7 @@ object FormSelecao: TFormSelecao
     OnKeyPress = edtBuscaKeyPress
   end
   object edtPaginaAtual: TEdit
-    Left = 147
+    Left = 403
     Top = 456
     Width = 41
     Height = 23
@@ -159,7 +137,7 @@ object FormSelecao: TFormSelecao
     OnKeyPress = edtPaginaAtualKeyPress
   end
   object edtTotalPaginas: TEdit
-    Left = 194
+    Left = 474
     Top = 456
     Width = 41
     Height = 23
@@ -170,7 +148,7 @@ object FormSelecao: TFormSelecao
   end
   object cbFiltrar: TComboBox
     Left = 251
-    Top = 8
+    Top = 9
     Width = 145
     Height = 23
     Style = csDropDownList
@@ -200,16 +178,16 @@ object FormSelecao: TFormSelecao
     Top = 11
     Width = 280
     Height = 17
-    Caption = 'Diferenciar Mai'#250'sculas de Min'#250'sculas [Ctrl+3]'
+    Caption = '[F11] Diferenciar Mai'#250'sculas de Min'#250'sculas'
     TabOrder = 8
     OnClick = chkDiferMaiusculasMinusculasClick
   end
   object chkListarTudo: TCheckBox
     Left = 647
-    Top = 39
+    Top = 40
     Width = 130
     Height = 17
-    Caption = 'Listar tudo [Ctrl+4]'
+    Caption = '[F12] Listar tudo'
     TabOrder = 9
     OnClick = chkListarTudoClick
   end

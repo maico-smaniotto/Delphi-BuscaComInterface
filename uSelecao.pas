@@ -108,11 +108,8 @@ type
     rbContem: TRadioButton;
     chkDiferMaiusculasMinusculas: TCheckBox;
     Label3: TLabel;
-    Label4: TLabel;
-    Label5: TLabel;
-    Label6: TLabel;
-    Label7: TLabel;
     chkListarTudo: TCheckBox;
+    Label8: TLabel;
     procedure btnVoltarClick(Sender: TObject);
     procedure GridDblClick(Sender: TObject);
     procedure edtBuscaChange(Sender: TObject);
@@ -465,6 +462,14 @@ begin
   FQuery.ParamByName('P_LIMIT').AsInteger := LIMITE;
 
   FQuery.Open();
+
+  if rbInicia.Checked then
+  begin
+    if FQuery.FieldByName(FExibirColunas[cbFiltrar.ItemIndex]) is TStringField then
+      if not FQuery.Locate(FExibirColunas[cbFiltrar.ItemIndex], edtbusca.Text, []) then
+        FQuery.Locate(FExibirColunas[cbFiltrar.ItemIndex], edtbusca.Text, [loPartialKey]);
+  end;
+
   if FQuery.IsEmpty then
     FPagina := 0;
 
