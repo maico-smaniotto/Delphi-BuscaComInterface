@@ -91,21 +91,21 @@ type
     FPermitirFiltro: Boolean;
     FLArgura: Integer;
   public
-    // Getter
+    // Getters
     function GetAlias(): String;
     function GetNomeExplicito(): String;
     function GetTitulo(): String;
     function GetExibir(): Boolean;
     function GetPermitirFiltro(): Boolean;
     function GetLargura(): Integer;
-    // Setter
+    // Setters
     function Titulo(ATitulo: String): ISelecaoColuna;
     function Exibir(AExibir: Boolean): ISelecaoColuna;
     function PermitirFiltro(APermitirFiltro: Boolean): ISelecaoColuna;
     function Largura(ALargura: Integer): ISelecaoColuna;
     function &End: ISelecaoColunas;
 
-    constructor Create(AParent: ISelecaoColunas; AAlias: String); reintroduce; overload;
+    constructor Create(AParent: ISelecaoColunas; AAlias: String; ANomeCompleto: String); reintroduce; overload;
   end;
 
   TSelecaoColunas = class(TInterfacedObject, ISelecaoColunas)
@@ -380,6 +380,7 @@ type
     procedure ContarRegistros(AQuery: TFDQuery; out ATotalRegistros: Integer; out ATotalPaginas: Integer);
     procedure TratarColunas;
     procedure AtualizarPaginacao;
+    procedure AlimentarParametros(AQuery: TFDQuery; ASelParams: ISelecaoQueryParams);
   public
     { Public declarations }
     property Retorno: ISelecaoRetorno read FRetorno;
@@ -464,6 +465,20 @@ end;
 
 { TFormSelecao }
 
+procedure TFormSelecao.AlimentarParametros(AQuery: TFDQuery; ASelParams: ISelecaoQueryParams);
+begin
+  for var LSelParam in ASelParams.GetItems do
+  begin
+    case LSelParam.Value.GetType of
+      ftBoolean  : AQuery.ParamByName(LSelParam.Key).AsBoolean := LSelParam.Value.GetAsBoolean;
+      ftDateTime : AQuery.ParamByName(LSelParam.Key).AsDateTime := LSelParam.Value.GetAsDateTime;
+      ftFloat    : AQuery.ParamByName(LSelParam.Key).AsFloat := LSelParam.Value.GetAsFloat;
+      ftInteger  : AQuery.ParamByName(LSelParam.Key).AsInteger := LSelParam.Value.GetAsInteger;
+      ftString   : AQuery.ParamByName(LSelParam.Key).AsString := LSelParam.Value.GetAsString;
+    end;
+  end;
+end;
+
 procedure TFormSelecao.AtualizarPaginacao;
 begin
   edtPaginaAtual.Text := IntToStr(FPagina);
@@ -513,18 +528,15 @@ begin
     if LAlias.Contains('+') or LAlias.Contains('-') or LAlias.Contains('*') or LAlias.Contains('/') or LAlias.Contains('(') or LAlias.Contains(')') then
       Continue;
 
-    var LValue := '';
-    var LDic := TDictionary<String, String>.Create;
-    try
-      LDic.TryGetValue(LAlias, LValue);
-      LValue := LCompleto;
-      LDic.AddOrSetValue(LAlias, LValue);
-    finally
-      LDic.Free;
-    end;
+    var LValue: ISelecaoColuna := nil;
+    FColunas.TryGetValue(LAlias, LValue);
 
-    ShowMessage(LValue + ' ======= ' + LAlias);
-    //FListaAlias.Add(LAlias);
+    if LValue = nil then
+      LValue := TSelecaoColuna.Create(nil, LAlias, LCompleto);
+
+    FColunas.AddOrSetValue(LAlias, LValue);
+    if LValue.GetPermitirFiltro() then
+      FListaAlias.Add(LAlias);
   end;
 end;
 
@@ -696,6 +708,7 @@ begin
     if (edtBusca.Text <> '') then
     begin
       var vBusca := edtBusca.Text + '%';
+
       if rbContem.Checked then
         vBusca := '%' + vBusca;
 
@@ -726,6 +739,8 @@ begin
 
   if FSelecaoQuery.GetOrderBy <> '' then
     FQuery.SQL.Add('ORDER BY ' + FSelecaoQuery.GetOrderBy);
+
+  AlimentarParametros(FQuery, FSelecaoQuery.Params);
 
   ContarRegistros(FQuery, FTotalRegistros, FTotalPaginas);
 
@@ -1295,11 +1310,11 @@ end;
 
 { TSelecaoColuna }
 
-constructor TSelecaoColuna.Create(AParent: ISelecaoColunas; AAlias: String);
+constructor TSelecaoColuna.Create(AParent: ISelecaoColunas; AAlias: String; ANomeCompleto: String);
 begin
   Self.FParent := AParent;
   Self.FAlias := AAlias;
-  Self.FNomeExplicito := '';
+  Self.FNomeExplicito := ANomeCompleto;
   Self.FTitulo := '<not assigned>';
   Self.FExibir := True;
   Self.FPermitirFiltro := True;
@@ -1334,7 +1349,10 @@ end;
 
 function TSelecaoColuna.GetNomeExplicito: String;
 begin
-  Result := FNomeExplicito;
+  if FNomeExplicito <> '' then
+    Result := FNomeExplicito
+  else
+    Result := FAlias;
 end;
 
 function TSelecaoColuna.GetPermitirFiltro: Boolean;
@@ -1371,7 +1389,7 @@ function TSelecaoColunas.Coluna(AAlias: String): ISelecaoColuna;
 begin
   if not FColecaoColunas.TryGetValue(AAlias, Result) then
   begin
-    Result := TSelecaoColuna.Create(Self, AAlias);
+    Result := TSelecaoColuna.Create(Self, AAlias, '');
     FColecaoColunas.Add(AAlias, Result)
   end;
 
