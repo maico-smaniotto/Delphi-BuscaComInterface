@@ -22,8 +22,8 @@ type
   TSelecaoQuery = class;
   TSelecaoQueryParam = class;
   TSelecaoQueryParams = class;
-//  TSelecaoColuna = class;
-//  TSelecaoColunas = class;
+  TSelecaoColuna = class;
+  TSelecaoColunas = class;
   TSelecaoIniciarBuscaPor = class;
 
   ISelecaoRetorno = interface
@@ -71,18 +71,9 @@ type
     function &End: ISelecao;
   end;
 
-//  TSelecaoColunaProps = record
-//    NomeExplicito: String;
-//    Titulo: String;
-//    Exibir: Boolean;
-//    PermitirFiltro: Boolean;
-//    Largura: Integer;
-//    procedure Init;
-//  end;
-//  TSelecaoColunasCollection = TDictionary<String, TSelecaoColunaProps>;
-
   TSelecaoColuna = class(TInterfacedObject, ISelecaoColuna)
   private
+    [Weak]
     FParent: ISelecaoColunas;
     FAlias: String;
     FNomeExplicito: String;
@@ -110,6 +101,7 @@ type
 
   TSelecaoColunas = class(TInterfacedObject, ISelecaoColunas)
   private
+    [Weak]
     FParent: ISelecao;
     FColecaoColunas: TSelecaoColunasCollection;
   public
@@ -132,6 +124,7 @@ type
 
   TSelecaoIniciarBuscaPor = class(TInterfacedObject, ISelecaoIniciarBuscaPor)
   private
+    [Weak]
     FParent: ISelecao;
     FColuna: String;
     FValor: String;
@@ -176,6 +169,7 @@ type
 
   TSelecaoQueryParam = class(TInterfacedObject, ISelecaoQueryParam)
   private
+    [Weak]
     FParent: ISelecaoQueryParams;
     FName: String;
     FType: TFieldType;
@@ -207,8 +201,8 @@ type
 
   TSelecaoQueryParams = class(TInterfacedObject, ISelecaoQueryParams)
   private
+    [Weak]
     FParent: ISelecaoQuery;
-//    TSelecaoQueryParamsCollection = TDictionary<String, ISelecaoQueryParam>;
     FParams: TDictionary<String, ISelecaoQueryParam>;
   public
     // Getters
@@ -247,6 +241,7 @@ type
 
   TSelecaoQuery = class(TInterfacedObject, ISelecaoQuery)
   private
+    [Weak]
     FParent: ISelecao;
     FSelect: String;
     FFrom: String;
@@ -309,6 +304,7 @@ type
     function Conexao(AConexao: TFDConnection): ISelecao;
     function Executar: ISelecaoRetorno;
 
+    // Acts as a constructor but returns the interface type
     class function New(): ISelecao;
 
     constructor Create; reintroduce;
@@ -358,11 +354,10 @@ type
     procedure edtPaginaAtualExit(Sender: TObject);
   private
     { Private declarations }
-    FSelecaoQuery: ISelecaoQuery;
+    FSelecao: ISelecao;
     FColunas: TSelecaoColunasCollection;
     FListaAlias: TStrings;
 
-    FIniciarBuscaPor: ISelecaoIniciarBuscaPor;
     FConexao: TFDConnection;
 
     FQuery: TFDQuery;
@@ -387,9 +382,7 @@ type
     constructor Create(
       AOwner: TComponent;
       ATitulo: String;
-      ASelecaoQuery: ISelecaoQuery;
-      AColunas: ISelecaoColunas;
-      AIniciarBuscaPor: ISelecaoIniciarBuscaPor;
+      ASelecao: ISelecao;
       AListarTudo: Boolean;
       AConexao: TFDConnection); reintroduce; overload;
     destructor Destroy; reintroduce; override;
@@ -492,11 +485,8 @@ begin
 end;
 
 procedure TFormSelecao.CarregarTodasColunas;
-//var
-//  LTokens: TArray<String>;
 begin
-//  LTokens := FSelect.Split([',']);
-  for var LToken in FSelecaoQuery.GetSelect.Split([',']) do
+  for var LToken in FSelecao.Query.GetSelect.Split([',']) do
   begin
     var LParts := LToken.Trim().Split([' ']);
     if Length(LParts) = 0 then Continue;
@@ -506,7 +496,7 @@ begin
     if Length(LParts) > 1 then
     begin
       LAlias := LParts[Length(LParts) - 1].Trim();
-      var LLimite := 0;
+      var LLimite: Integer;
       if SameText(LParts[Length(LParts) - 2].Trim(), 'as') then
         LLimite := Length(LParts) - 3
       else
@@ -593,23 +583,22 @@ end;
 constructor TFormSelecao.Create(
   AOwner: TComponent;
   ATitulo: String;
-  ASelecaoQuery: ISelecaoQuery;
-  AColunas: ISelecaoColunas;
-  AIniciarBuscaPor: ISelecaoIniciarBuscaPor;
+  ASelecao: ISelecao;
   AListarTudo: Boolean;
   AConexao: TFDConnection);
 begin
   inherited Create(AOwner);
   Caption := ATitulo;
-  FSelecaoQuery := ASelecaoQuery;
+
+  FSelecao := ASelecao;
 
   // AColunas vai conter apenas as colunas que têm alguma personalização
-  FColunas := AColunas.GetItems();
+  FColunas := ASelecao.Colunas.GetItems();
+
   FListaAlias := TStringList.Create;
   // Carrega as demais colunas da cláusula select completando FColunas e também alimenta a lista de aliases FListaAlias
   CarregarTodasColunas;
 
-  FIniciarBuscaPor := AIniciarBuscaPor;
   FConexao := AConexao;
 
   FPagina := 0;
@@ -625,7 +614,7 @@ begin
   chkListarTudo.OnClick := nil;
   rbInicia.OnClick := nil;
   try
-    edtBusca.Text := FIniciarBuscaPor.GetValor;
+    edtBusca.Text := FSelecao.IniciarBuscaPor.GetValor;
     chkDiferMaiusculasMinusculas.Checked := False;
     chkListarTudo.Checked := AListarTudo;
     rbInicia.Checked := True;
@@ -640,9 +629,6 @@ end;
 
 destructor TFormSelecao.Destroy;
 begin
-//    FSelecaoQuery.Free;
-//    FIniciarBuscaPor.Free;
-  FColunas.Free;
   FListaAlias.Free;
 
   // Objeto FQuery será transferido para FRetorno e não deve ser destruído aqui
@@ -662,7 +648,9 @@ begin
   if Key = VK_DOWN then
   begin
     Grid.SetFocus;
-  end;
+  end
+  else
+    FormKeyDown(Sender, Key, Shift);
 end;
 
 procedure TFormSelecao.edtBuscaKeyPress(Sender: TObject; var Key: Char);
@@ -693,15 +681,15 @@ procedure TFormSelecao.ExecutarBusca(APagina: Integer);
 begin
   FQuery.Close;
   FQuery.SQL.Clear;
-  FQuery.SQL.Add('SELECT ' + FSelecaoQuery.GetSelect);
-  FQuery.SQL.Add('FROM ' + FSelecaoQuery.GetFrom);
+  FQuery.SQL.Add('SELECT ' + FSelecao.Query.GetSelect);
+  FQuery.SQL.Add('FROM ' + FSelecao.Query.GetFrom);
 
-  for var I := 0 to FSelecaoQuery.GetJoins.Count - 1 do
-    FQuery.SQL.Add(FSelecaoQuery.GetJoins[I]);
+  for var I := 0 to FSelecao.Query.GetJoins.Count - 1 do
+    FQuery.SQL.Add(FSelecao.Query.GetJoins[I]);
 
   FQuery.SQL.Add('WHERE 1 = 1 ');
-  for var I := 0 to FSelecaoQuery.GetFiltros.Count - 1 do
-    FQuery.SQL.Add('AND ' + FSelecaoQuery.GetFiltros[I]);
+  for var I := 0 to FSelecao.Query.GetFiltros.Count - 1 do
+    FQuery.SQL.Add('AND ' + FSelecao.Query.GetFiltros[I]);
 
   if not chkListarTudo.Checked then
   begin
@@ -727,21 +715,20 @@ begin
       FQuery.SQL.Add('AND 1 = 0');
   end;
 
-  if FSelecaoQuery.GetGroupBy <> '' then
-    FQuery.SQL.Add('GROUP BY ' + FSelecaoQuery.GetGroupBy);
+  if FSelecao.Query.GetGroupBy <> '' then
+    FQuery.SQL.Add('GROUP BY ' + FSelecao.Query.GetGroupBy);
 
-  if FSelecaoQuery.GetHaving.Count > 0 then
+  if FSelecao.Query.GetHaving.Count > 0 then
   begin
     FQuery.SQL.Add('HAVING 1 = 1 ');
-    for var I := 0 to FSelecaoQuery.GetHaving.Count - 1 do
-      FQuery.SQL.Add('AND ' + FSelecaoQuery.GetHaving[I]);
+    for var I := 0 to FSelecao.Query.GetHaving.Count - 1 do
+      FQuery.SQL.Add('AND ' + FSelecao.Query.GetHaving[I]);
   end;
 
-  if FSelecaoQuery.GetOrderBy <> '' then
-    FQuery.SQL.Add('ORDER BY ' + FSelecaoQuery.GetOrderBy);
+  if FSelecao.Query.GetOrderBy <> '' then
+    FQuery.SQL.Add('ORDER BY ' + FSelecao.Query.GetOrderBy);
 
-  AlimentarParametros(FQuery, FSelecaoQuery.Params);
-
+  AlimentarParametros(FQuery, FSelecao.Query.Params);
   ContarRegistros(FQuery, FTotalRegistros, FTotalPaginas);
 
   FPagina := APagina;
@@ -822,7 +809,7 @@ begin
       else
         cbFiltrar.Items.Add(LCol);
 
-      if SameText(LCol, FIniciarBuscaPor.GetColuna) then
+      if SameText(LCol, FSelecao.IniciarBuscaPor.GetColuna) then
         vIndex := cbFiltrar.GetCount - 1;
     end;
     cbFiltrar.ItemIndex := vIndex;
@@ -948,10 +935,6 @@ end;
 
 destructor TSelecao.Destroy;
 begin
-//  FColunas.Free;
-//  FSelecaoQuery.Free;
-//  FIniciarBuscaPor.Free;
-  ShowMessage('TSelecao.Destroy');
   inherited;
 end;
 
@@ -962,9 +945,7 @@ begin
   FormSelecao := TFormSelecao.Create(
     nil,
     FTitulo,
-    FSelecaoQuery,
-    FColunas,
-    FIniciarBuscaPor,
+    Self,
     FListarTudo,
     FConexao
   );
@@ -1019,8 +1000,6 @@ begin
   FJoins.Free;
   FFiltros.Free;
   FHaving.Free;
-//  FParams.Free;
-  ShowMessage('TSelecaoQuery.Destroy');
   inherited;
 end;
 
@@ -1117,17 +1096,6 @@ begin
   Result := Self;
 end;
 
-{ TSelecaoColunaProps }
-
-//procedure TSelecaoColunaProps.Init;
-//begin
-//  Self.NomeExplicito := '';
-//  Self.Titulo := '<not assigned>';
-//  Self.Exibir := True;
-//  Self.PermitirFiltro := True;
-//  Self.Largura := -1;
-//end;
-
 { TSelecaoIniciarBuscaPor }
 
 function TSelecaoIniciarBuscaPor.Coluna(AColuna: String): ISelecaoIniciarBuscaPor;
@@ -1150,8 +1118,6 @@ end;
 
 destructor TSelecaoIniciarBuscaPor.Destroy;
 begin
-  ShowMessage('TSelecaoIniciarBuscaPor.Free');
-  //FParent.Free;
   inherited;
 end;
 
@@ -1181,7 +1147,6 @@ end;
 destructor TSelecaoQueryParams.Destroy;
 begin
   FParams.Free;
-  ShowMessage('TSelecaoQueryParams.Destroy');
   inherited;
 end;
 
@@ -1259,7 +1224,6 @@ end;
 
 destructor TSelecaoQueryParam.Destroy;
 begin
-  ShowMessage('TSelecaoQueryParam.Destroy');
   inherited;
 end;
 
@@ -1392,7 +1356,6 @@ begin
     Result := TSelecaoColuna.Create(Self, AAlias, '');
     FColecaoColunas.Add(AAlias, Result)
   end;
-
 end;
 
 constructor TSelecaoColunas.Create(AParent: ISelecao);
@@ -1405,7 +1368,6 @@ end;
 destructor TSelecaoColunas.Destroy;
 begin
   FColecaoColunas.Free;
-  ShowMessage('TSelecaoColunas.Destroy');
   inherited;
 end;
 
